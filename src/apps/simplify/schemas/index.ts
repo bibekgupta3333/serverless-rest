@@ -1,0 +1,1 @@
+export { simplifyArgumentsInputSchema } from './simplifyArgumentSchema';
