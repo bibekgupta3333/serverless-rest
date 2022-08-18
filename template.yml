@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AWS SAM template for Survey API
+
+Globals:
+  Function:
+    Runtime: nodejs16.x
+    Timeout: 30
+    Environment:
+      Variables:
+        SIMPLIFY_RESULTS_TABLE_NAME: !Ref SimplifyResultsTable
+
+Resources:
+  SimplifyArgumentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: simplifyArguments.handler
+      CodeUri: ./src/apps/simplify/handlers
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SimplifyResultsTable
+      FunctionUrlConfig:
+        AuthType: NONE
+        Cors:
+          AllowOrigins:
+            - "*"
+          AllowHeaders: 
+            - "*"
+          AllowMethods:
+            - "*"
+      Events:
+        SimplifyApi:
+          Type: Api
+          Properties:
+            Path: /simplify
+            Method: post
+
+  SimplifyResultsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: result
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: result
+          KeyType: "RANGE"
+
+Outputs:
+  SimplifyApi:
+    Description: 'API Gateway endpoint URL for Prod stage for Simplify arguments function'
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/simplify/'
+  SimplifyArgumentFunction:
+    Description: 'Simplify arguments Lambda Function ARN'
+    Value: !GetAtt SimplifyArgumentFunction.Arn
+  SimplifyArgumentFunctionIamRole:
+    Description: 'Implicit IAM Role created for Simplify arguments function'
+    Value: !GetAtt SimplifyArgumentFunctionRole.Arn
